@@ -101,6 +101,7 @@ export const products: Product[] = [
     category: 'desserts',
     image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/cake.glb',
     ingredients: ['Mascarpone', 'Café', 'Savoiardi', 'Cacau', 'Amaretto'],
     views: 367,
   },
