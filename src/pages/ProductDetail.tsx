@@ -30,7 +30,7 @@ const ProductDetail = () => {
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       }>
-        <WebXRViewer product={product} onClose={() => setShowWebXR(false)} />
+        <CameraARViewer product={product} onClose={() => setShowWebXR(false)} />
       </Suspense>
     );
   }
