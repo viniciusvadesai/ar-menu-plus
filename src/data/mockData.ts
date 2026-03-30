@@ -47,6 +47,7 @@ export const products: Product[] = [
     category: 'starters',
     image: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/sushi.glb',
     ingredients: ['Wagyu A5', 'Rúcula', 'Parmesão', 'Balsâmico', 'Trufa'],
     views: 189,
   },
