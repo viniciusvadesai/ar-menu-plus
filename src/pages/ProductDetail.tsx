@@ -5,7 +5,7 @@ import { products } from '@/data/mockData';
 import { useState, lazy, Suspense } from 'react';
 import ProductViewer3D from '@/components/ar/ProductViewer3D';
 
-const WebXRViewer = lazy(() => import('@/components/ar/WebXRViewer'));
+const CameraARViewer = lazy(() => import('@/components/ar/CameraARViewer'));
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -30,7 +30,7 @@ const ProductDetail = () => {
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       }>
-        <WebXRViewer product={product} onClose={() => setShowWebXR(false)} />
+        <CameraARViewer product={product} onClose={() => setShowWebXR(false)} />
       </Suspense>
     );
   }
