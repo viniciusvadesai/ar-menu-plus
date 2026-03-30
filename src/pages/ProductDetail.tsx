@@ -5,7 +5,7 @@ import { products } from '@/data/mockData';
 import { useState, lazy, Suspense } from 'react';
 import ProductViewer3D from '@/components/ar/ProductViewer3D';
 
-const WebXRViewer = lazy(() => import('@/components/ar/WebXRViewer'));
+const CameraARViewer = lazy(() => import('@/components/ar/CameraARViewer'));
 
 const ProductDetail = () => {
   const { id } = useParams();
