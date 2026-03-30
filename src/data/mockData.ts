@@ -83,6 +83,7 @@ export const products: Product[] = [
     category: 'pasta',
     image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/pizza.glb',
     ingredients: ['Tagliatelle', 'Trufa Negra', 'Parmesão', 'Creme', 'Azeite Trufado'],
     views: 298,
   },
