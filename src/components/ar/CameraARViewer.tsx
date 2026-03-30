@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows, Html, useGLTF } from '@react-three/drei';
 import { X, ZoomIn, ZoomOut, RotateCw, Camera, FlipHorizontal } from 'lucide-react';
 import { Product } from '@/data/mockData';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,49 +11,62 @@ interface CameraARViewerProps {
   onClose: () => void;
 }
 
-const PlateModel = ({ product, scale }: { product: Product; scale: number }) => {
-  const groupRef = useRef<THREE.Group>(null);
+const GLBModel = ({ url, scale }: { url: string; scale: number }) => {
+  const { scene } = useGLTF(url);
+  const cloned = scene.clone(true);
+
+  useEffect(() => {
+    // Auto-center and normalize the model
+    const box = new THREE.Box3().setFromObject(cloned);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const normalizeScale = 2.5 / maxDim;
+
+    cloned.scale.setScalar(normalizeScale);
+    cloned.position.set(-center.x * normalizeScale, -box.min.y * normalizeScale, -center.z * normalizeScale);
+  }, [cloned]);
 
   return (
-    <group ref={groupRef} scale={scale}>
+    <group scale={scale}>
+      <primitive object={cloned} />
+    </group>
+  );
+};
+
+const PlateModel = ({ product, scale }: { product: Product; scale: number }) => {
+  return (
+    <group scale={scale}>
       {/* Plate */}
       <mesh castShadow receiveShadow position={[0, 0, 0]}>
         <cylinderGeometry args={[1.5, 1.5, 0.08, 64]} />
         <meshStandardMaterial color="#f5f5f5" roughness={0.3} metalness={0.1} />
       </mesh>
-
       {/* Rim */}
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[1.5, 0.05, 16, 64]} />
         <meshStandardMaterial color="#e0e0e0" roughness={0.2} metalness={0.3} />
       </mesh>
-
       {/* Gold accent ring */}
       <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[1.35, 0.02, 16, 64]} />
         <meshStandardMaterial color="#C5930C" roughness={0.3} metalness={0.7} />
       </mesh>
-
       {/* Food items */}
       {[0xc0392b, 0x27ae60, 0xf39c12, 0x8e44ad, 0xe67e22].map((color, i) => {
         const angle = (i / 5) * Math.PI * 2;
-        const radius = 0.4 + Math.random() * 0.5;
+        const radius = 0.6 + (i * 0.08);
         return (
           <mesh
             key={i}
             castShadow
-            position={[
-              Math.cos(angle) * radius,
-              0.1 + Math.random() * 0.15,
-              Math.sin(angle) * radius,
-            ]}
+            position={[Math.cos(angle) * radius, 0.12 + i * 0.02, Math.sin(angle) * radius]}
           >
-            <sphereGeometry args={[0.15 + Math.random() * 0.12, 16, 16]} />
+            <sphereGeometry args={[0.15 + i * 0.02, 16, 16]} />
             <meshStandardMaterial color={color} roughness={0.6} />
           </mesh>
         );
       })}
-
       {/* Ingredient labels */}
       {product.ingredients?.slice(0, 3).map((ing, i) => {
         const angle = (i / 3) * Math.PI * 2 + Math.PI / 6;
@@ -74,6 +87,15 @@ const PlateModel = ({ product, scale }: { product: Product; scale: number }) => 
   );
 };
 
+const ModelLoadingFallback = () => (
+  <Html center>
+    <div className="flex flex-col items-center gap-2">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs text-muted-foreground">Carregando modelo 3D...</span>
+    </div>
+  </Html>
+);
+
 const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -82,19 +104,16 @@ const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
   const [scale, setScale] = useState(0.5);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
+  const hasGLB = !!product.model3dUrl;
+
   const startCamera = useCallback(async (facing: 'environment' | 'user') => {
     try {
-      // Stop existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facing,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+        video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
 
@@ -159,18 +178,20 @@ const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
               <ambientLight intensity={0.6} />
               <directionalLight position={[5, 8, 5]} intensity={1.2} castShadow />
               <directionalLight position={[-3, 4, -3]} intensity={0.4} />
-              <PlateModel product={product} scale={scale} />
-              <ContactShadows
-                position={[0, -0.05, 0]}
-                opacity={0.4}
-                scale={8}
-                blur={2}
-                far={4}
-              />
+
+              <Suspense fallback={<ModelLoadingFallback />}>
+                {hasGLB ? (
+                  <GLBModel url={product.model3dUrl!} scale={scale} />
+                ) : (
+                  <PlateModel product={product} scale={scale} />
+                )}
+              </Suspense>
+
+              <ContactShadows position={[0, -0.05, 0]} opacity={0.4} scale={8} blur={2} far={4} />
               <OrbitControls
-                enablePan={true}
-                enableZoom={true}
-                enableRotate={true}
+                enablePan
+                enableZoom
+                enableRotate
                 autoRotate
                 autoRotateSpeed={1.5}
                 maxPolarAngle={Math.PI / 2}
@@ -182,20 +203,21 @@ const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
           </div>
         )}
 
+        {/* GLB badge */}
+        {hasGLB && cameraReady && (
+          <div className="absolute top-20 left-4 z-10 glass-strong px-3 py-1.5 rounded-full">
+            <span className="text-[10px] font-semibold gold-text">✦ Modelo 3D real</span>
+          </div>
+        )}
+
         {/* Top Bar */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-safe">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose}
-            className="glass-strong p-3 rounded-full"
-          >
+          <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="glass-strong p-3 rounded-full">
             <X className="w-5 h-5 text-foreground" />
           </motion.button>
-
           <div className="glass-strong px-4 py-2 rounded-full">
             <span className="text-sm font-medium text-foreground">{product.name}</span>
           </div>
-
           <div className="glass-strong px-3 py-2 rounded-full">
             <span className="text-sm font-bold gold-text">R$ {product.price.toFixed(2)}</span>
           </div>
@@ -209,16 +231,10 @@ const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
               <h3 className="text-lg font-display font-bold text-foreground mb-2">Câmera indisponível</h3>
               <p className="text-sm text-muted-foreground mb-6">{cameraError}</p>
               <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => startCamera(facingMode)}
-                  className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm"
-                >
+                <button onClick={() => startCamera(facingMode)} className="gold-gradient text-primary-foreground px-6 py-3 rounded-xl font-semibold text-sm">
                   Tentar novamente
                 </button>
-                <button
-                  onClick={onClose}
-                  className="glass px-6 py-3 rounded-xl font-semibold text-sm text-foreground"
-                >
+                <button onClick={onClose} className="glass px-6 py-3 rounded-xl font-semibold text-sm text-foreground">
                   Voltar
                 </button>
               </div>
@@ -234,46 +250,25 @@ const CameraARViewer = ({ product, onClose }: CameraARViewerProps) => {
             transition={{ delay: 0.3 }}
             className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3 z-10"
           >
-            {/* Hint */}
             <div className="glass-strong px-4 py-2 rounded-full mb-1">
-              <p className="text-xs text-muted-foreground">
-                Arraste para girar · Pinça para zoom
-              </p>
+              <p className="text-xs text-muted-foreground">Arraste para girar · Pinça para zoom</p>
             </div>
-
             <div className="glass-strong rounded-2xl p-3 flex items-center gap-3">
-              <button
-                onClick={() => setScale(s => Math.max(s - 0.1, 0.2))}
-                className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors"
-              >
+              <button onClick={() => setScale(s => Math.max(s - 0.1, 0.2))} className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors">
                 <ZoomOut className="w-5 h-5 text-foreground" />
               </button>
-
               <div className="text-center px-2 min-w-[50px]">
                 <p className="text-xs text-muted-foreground">Escala</p>
                 <p className="text-sm font-bold text-foreground">{Math.round(scale * 100)}%</p>
               </div>
-
-              <button
-                onClick={() => setScale(s => Math.min(s + 0.1, 1.5))}
-                className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors"
-              >
+              <button onClick={() => setScale(s => Math.min(s + 0.1, 1.5))} className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors">
                 <ZoomIn className="w-5 h-5 text-foreground" />
               </button>
-
               <div className="w-px h-8 bg-border" />
-
-              <button
-                onClick={() => setScale(0.5)}
-                className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors"
-              >
+              <button onClick={() => setScale(0.5)} className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors">
                 <RotateCw className="w-5 h-5 text-foreground" />
               </button>
-
-              <button
-                onClick={toggleCamera}
-                className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors"
-              >
+              <button onClick={toggleCamera} className="p-3 rounded-xl bg-secondary/50 active:bg-secondary transition-colors">
                 <FlipHorizontal className="w-5 h-5 text-foreground" />
               </button>
             </div>
