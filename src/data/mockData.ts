@@ -71,6 +71,7 @@ export const products: Product[] = [
     category: 'mains',
     image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/sushi.glb',
     ingredients: ['Salmão', 'Ervas', 'Risoto', 'Limão', 'Aspargos'],
     views: 356,
   },
