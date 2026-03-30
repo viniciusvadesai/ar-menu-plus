@@ -1,14 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Eye, Share2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Eye, Share2, Camera, Box } from 'lucide-react';
 import { products } from '@/data/mockData';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import ProductViewer3D from '@/components/ar/ProductViewer3D';
+
+const WebXRViewer = lazy(() => import('@/components/ar/WebXRViewer'));
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showAR, setShowAR] = useState(false);
+  const [showWebXR, setShowWebXR] = useState(false);
 
   const product = products.find((p) => p.id === id);
 
@@ -17,6 +20,18 @@ const ProductDetail = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Produto não encontrado</p>
       </div>
+    );
+  }
+
+  if (showWebXR) {
+    return (
+      <Suspense fallback={
+        <div className="fixed inset-0 bg-background flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <WebXRViewer product={product} onClose={() => setShowWebXR(false)} />
+      </Suspense>
     );
   }
 
@@ -96,20 +111,33 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* AR Button */}
+          {/* Action Buttons */}
           {product.arEnabled && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setShowAR(!showAR)}
-              className={`w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${
-                showAR
-                  ? 'bg-secondary text-secondary-foreground'
-                  : 'gold-gradient text-primary-foreground gold-glow'
-              }`}
-            >
-              <Sparkles className="w-5 h-5" />
-              {showAR ? 'Ver Foto' : 'Ver em 3D / AR'}
-            </motion.button>
+            <div className="space-y-3">
+              {/* AR Camera Button - Primary */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowWebXR(true)}
+                className="w-full py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 gold-gradient text-primary-foreground gold-glow"
+              >
+                <Camera className="w-5 h-5" />
+                Ver em AR na câmera
+              </motion.button>
+
+              {/* 3D Viewer Toggle - Secondary */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowAR(!showAR)}
+                className={`w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${
+                  showAR
+                    ? 'bg-secondary text-secondary-foreground'
+                    : 'glass text-foreground hover:bg-surface-hover'
+                }`}
+              >
+                <Box className="w-5 h-5" />
+                {showAR ? 'Ver Foto' : 'Ver em 3D'}
+              </motion.button>
+            </div>
           )}
         </motion.div>
       </div>
