@@ -59,6 +59,7 @@ export const products: Product[] = [
     category: 'mains',
     image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/burger.glb',
     ingredients: ['Filé Mignon', 'Vinho Tinto', 'Batata', 'Trufa', 'Legumes'],
     views: 412,
   },
