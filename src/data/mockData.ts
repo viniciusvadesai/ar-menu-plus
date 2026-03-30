@@ -35,6 +35,7 @@ export const products: Product[] = [
     category: 'starters',
     image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&q=80',
     arEnabled: true,
+    model3dUrl: '/models/pizza.glb',
     ingredients: ['Pão Italiano', 'Tomate', 'Manjericão', 'Alho', 'Azeite'],
     views: 245,
   },
