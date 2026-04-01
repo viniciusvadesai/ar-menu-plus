@@ -328,7 +328,7 @@ const AdminDashboard = () => {
                       onClick={handleSubmit}
                       className="w-full py-3 rounded-xl gold-gradient text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
                     >
-                      Salvar Produto
+                      {editingId ? 'Atualizar Produto' : 'Salvar Produto'}
                     </button>
                   </div>
                 </motion.div>
