@@ -192,7 +192,7 @@ const AdminDashboard = () => {
         {activeTab === 'products' && (
           <div className="mt-4 space-y-3">
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setEditingId(null); setForm(emptyProduct); setImagePreview(''); setShowForm(true); }}
               className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-all flex items-center justify-center gap-2 text-sm"
             >
               <Plus className="w-4 h-4" />
