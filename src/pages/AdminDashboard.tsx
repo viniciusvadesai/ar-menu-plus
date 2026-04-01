@@ -1,16 +1,104 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package, Upload, X, Image, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { products as initialProducts, categories, Product } from '@/data/mockData';
+import { toast } from 'sonner';
+
+interface NewProduct {
+  name: string;
+  description: string;
+  price: string;
+  category: string;
+  image: string;
+  arEnabled: boolean;
+  ingredients: string;
+}
+
+const emptyProduct: NewProduct = {
+  name: '',
+  description: '',
+  price: '',
+  category: 'starters',
+  image: '',
+  arEnabled: false,
+  ingredients: '',
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [productList] = useState<Product[]>(initialProducts);
+  const [productList, setProductList] = useState<Product[]>(initialProducts);
   const [activeTab, setActiveTab] = useState<'products' | 'analytics'>('products');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<NewProduct>(emptyProduct);
+  const [glbFile, setGlbFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const glbInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const totalViews = productList.reduce((sum, p) => sum + p.views, 0);
   const arProducts = productList.filter((p) => p.arEnabled).length;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+      setForm(prev => ({ ...prev, image: url }));
+    }
+  };
+
+  const handleGlbChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.toLowerCase().endsWith('.glb') && !file.name.toLowerCase().endsWith('.gltf')) {
+        toast.error('Formato inválido. Use arquivos .GLB ou .GLTF');
+        return;
+      }
+      setGlbFile(file);
+      setForm(prev => ({ ...prev, arEnabled: true }));
+      toast.success(`Modelo 3D carregado: ${file.name}`);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!form.name.trim()) {
+      toast.error('Nome do produto é obrigatório');
+      return;
+    }
+    if (!form.price || isNaN(Number(form.price))) {
+      toast.error('Preço inválido');
+      return;
+    }
+
+    const newProduct: Product = {
+      id: String(Date.now()),
+      name: form.name,
+      description: form.description,
+      price: parseFloat(form.price),
+      category: form.category,
+      image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
+      arEnabled: form.arEnabled,
+      model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
+      ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
+      views: 0,
+    };
+
+    setProductList(prev => [newProduct, ...prev]);
+    setShowForm(false);
+    setForm(emptyProduct);
+    setGlbFile(null);
+    setImageFile(null);
+    setImagePreview('');
+    toast.success('Produto adicionado com sucesso!');
+  };
+
+  const handleDelete = (id: string) => {
+    setProductList(prev => prev.filter(p => p.id !== id));
+    toast.success('Produto removido');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,10 +157,149 @@ const AdminDashboard = () => {
         {/* Product List */}
         {activeTab === 'products' && (
           <div className="mt-4 space-y-3">
-            <button className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-all flex items-center justify-center gap-2 text-sm">
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-all flex items-center justify-center gap-2 text-sm"
+            >
               <Plus className="w-4 h-4" />
               Adicionar Produto
             </button>
+
+            {/* Add Product Form */}
+            <AnimatePresence>
+              {showForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="glass rounded-xl p-5 space-y-4 border border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-display font-semibold text-foreground">Novo Produto</h3>
+                      <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors">
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nome *</label>
+                      <input
+                        value={form.name}
+                        onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Ex: Filé Mignon ao Molho"
+                        className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Descrição</label>
+                      <textarea
+                        value={form.description}
+                        onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descreva o prato..."
+                        rows={2}
+                        className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors resize-none"
+                      />
+                    </div>
+
+                    {/* Price + Category */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Preço (R$) *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={form.price}
+                          onChange={e => setForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Categoria</label>
+                        <select
+                          value={form.category}
+                          onChange={e => setForm(prev => ({ ...prev, category: e.target.value }))}
+                          className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-foreground text-sm focus:border-primary focus:outline-none transition-colors"
+                        >
+                          {categories.filter(c => c.id !== 'all').map(c => (
+                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Ingredients */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Ingredientes (separados por vírgula)</label>
+                      <input
+                        value={form.ingredients}
+                        onChange={e => setForm(prev => ({ ...prev, ingredients: e.target.value }))}
+                        placeholder="Carne, Batata, Molho..."
+                        className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Image Upload */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Imagem do Produto</label>
+                      <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                      <button
+                        onClick={() => imageInputRef.current?.click()}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors"
+                      >
+                        {imagePreview ? (
+                          <img src={imagePreview} alt="Preview" className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                            <Image className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="text-sm text-muted-foreground">
+                          {imageFile ? imageFile.name : 'Clique para enviar imagem'}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* GLB Upload */}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Modelo 3D (.GLB)</label>
+                      <input ref={glbInputRef} type="file" accept=".glb,.gltf" onChange={handleGlbChange} className="hidden" />
+                      <button
+                        onClick={() => glbInputRef.current?.click()}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg bg-secondary border border-border hover:border-primary/50 transition-colors"
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${glbFile ? 'bg-primary/20' : 'bg-muted'}`}>
+                          <Box className={`w-5 h-5 ${glbFile ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="text-left">
+                          <span className="text-sm text-muted-foreground block">
+                            {glbFile ? glbFile.name : 'Clique para enviar modelo .GLB'}
+                          </span>
+                          {glbFile && (
+                            <span className="text-xs text-primary">AR será habilitado automaticamente</span>
+                          )}
+                        </div>
+                        {glbFile && (
+                          <Sparkles className="w-4 h-4 text-primary ml-auto" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                      onClick={handleSubmit}
+                      className="w-full py-3 rounded-xl gold-gradient text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+                    >
+                      Salvar Produto
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence>
               {productList.map((product, i) => (
@@ -108,7 +335,10 @@ const AdminDashboard = () => {
                     <button className="p-2 glass rounded-lg hover:bg-surface-hover transition-colors">
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
-                    <button className="p-2 glass rounded-lg hover:bg-destructive/20 transition-colors">
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="p-2 glass rounded-lg hover:bg-destructive/20 transition-colors"
+                    >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </button>
                   </div>
@@ -145,7 +375,7 @@ const AdminDashboard = () => {
                         <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(p.views / productList[0].views) * 100}%` }}
+                            animate={{ width: `${(p.views / (productList[0]?.views || 1)) * 100}%` }}
                             transition={{ delay: 0.3 + i * 0.1, duration: 0.6 }}
                             className="h-full rounded-full gold-gradient"
                           />
