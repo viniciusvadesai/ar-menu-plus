@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [productList, setProductList] = useState<Product[]>(initialProducts);
   const [activeTab, setActiveTab] = useState<'products' | 'analytics'>('products');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<NewProduct>(emptyProduct);
   const [glbFile, setGlbFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -63,6 +64,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setForm({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      category: product.category,
+      image: product.image,
+      arEnabled: product.arEnabled,
+      ingredients: product.ingredients?.join(', ') || '',
+    });
+    setImagePreview(product.image);
+    setEditingId(product.id);
+    setGlbFile(null);
+    setImageFile(null);
+    setShowForm(true);
+  };
+
   const handleSubmit = () => {
     if (!form.name.trim()) {
       toast.error('Nome do produto é obrigatório');
@@ -73,26 +91,42 @@ const AdminDashboard = () => {
       return;
     }
 
-    const newProduct: Product = {
-      id: String(Date.now()),
-      name: form.name,
-      description: form.description,
-      price: parseFloat(form.price),
-      category: form.category,
-      image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
-      arEnabled: form.arEnabled,
-      model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
-      ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
-      views: 0,
-    };
+    if (editingId) {
+      setProductList(prev => prev.map(p => p.id === editingId ? {
+        ...p,
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        category: form.category,
+        image: form.image || p.image,
+        arEnabled: form.arEnabled,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : p.model3dUrl,
+        ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
+      } : p));
+      toast.success('Produto atualizado com sucesso!');
+    } else {
+      const newProduct: Product = {
+        id: String(Date.now()),
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        category: form.category,
+        image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
+        arEnabled: form.arEnabled,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
+        ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
+        views: 0,
+      };
+      setProductList(prev => [newProduct, ...prev]);
+      toast.success('Produto adicionado com sucesso!');
+    }
 
-    setProductList(prev => [newProduct, ...prev]);
     setShowForm(false);
+    setEditingId(null);
     setForm(emptyProduct);
     setGlbFile(null);
     setImageFile(null);
     setImagePreview('');
-    toast.success('Produto adicionado com sucesso!');
   };
 
   const handleDelete = (id: string) => {
@@ -158,7 +192,7 @@ const AdminDashboard = () => {
         {activeTab === 'products' && (
           <div className="mt-4 space-y-3">
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setEditingId(null); setForm(emptyProduct); setImagePreview(''); setShowForm(true); }}
               className="w-full py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-primary transition-all flex items-center justify-center gap-2 text-sm"
             >
               <Plus className="w-4 h-4" />
@@ -176,8 +210,8 @@ const AdminDashboard = () => {
                 >
                   <div className="glass rounded-xl p-5 space-y-4 border border-primary/20">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-display font-semibold text-foreground">Novo Produto</h3>
-                      <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors">
+                      <h3 className="font-display font-semibold text-foreground">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
+                      <button onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyProduct); setImagePreview(''); }} className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors">
                         <X className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
@@ -294,7 +328,7 @@ const AdminDashboard = () => {
                       onClick={handleSubmit}
                       className="w-full py-3 rounded-xl gold-gradient text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
                     >
-                      Salvar Produto
+                      {editingId ? 'Atualizar Produto' : 'Salvar Produto'}
                     </button>
                   </div>
                 </motion.div>
@@ -332,7 +366,7 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                   <div className="flex gap-1.5">
-                    <button className="p-2 glass rounded-lg hover:bg-surface-hover transition-colors">
+                    <button onClick={() => handleEdit(product)} className="p-2 glass rounded-lg hover:bg-surface-hover transition-colors">
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button
