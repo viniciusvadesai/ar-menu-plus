@@ -210,8 +210,8 @@ const AdminDashboard = () => {
                 >
                   <div className="glass rounded-xl p-5 space-y-4 border border-primary/20">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-display font-semibold text-foreground">Novo Produto</h3>
-                      <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors">
+                      <h3 className="font-display font-semibold text-foreground">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
+                      <button onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyProduct); setImagePreview(''); }} className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors">
                         <X className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
