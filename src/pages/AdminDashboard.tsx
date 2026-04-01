@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [productList, setProductList] = useState<Product[]>(initialProducts);
   const [activeTab, setActiveTab] = useState<'products' | 'analytics'>('products');
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<NewProduct>(emptyProduct);
   const [glbFile, setGlbFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
