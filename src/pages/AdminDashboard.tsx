@@ -366,7 +366,7 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                   <div className="flex gap-1.5">
-                    <button className="p-2 glass rounded-lg hover:bg-surface-hover transition-colors">
+                    <button onClick={() => handleEdit(product)} className="p-2 glass rounded-lg hover:bg-surface-hover transition-colors">
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button
