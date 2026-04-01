@@ -64,6 +64,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEdit = (product: Product) => {
+    setForm({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      category: product.category,
+      image: product.image,
+      arEnabled: product.arEnabled,
+      ingredients: product.ingredients?.join(', ') || '',
+    });
+    setImagePreview(product.image);
+    setEditingId(product.id);
+    setGlbFile(null);
+    setImageFile(null);
+    setShowForm(true);
+  };
+
   const handleSubmit = () => {
     if (!form.name.trim()) {
       toast.error('Nome do produto é obrigatório');
@@ -74,26 +91,42 @@ const AdminDashboard = () => {
       return;
     }
 
-    const newProduct: Product = {
-      id: String(Date.now()),
-      name: form.name,
-      description: form.description,
-      price: parseFloat(form.price),
-      category: form.category,
-      image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
-      arEnabled: form.arEnabled,
-      model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
-      ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
-      views: 0,
-    };
+    if (editingId) {
+      setProductList(prev => prev.map(p => p.id === editingId ? {
+        ...p,
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        category: form.category,
+        image: form.image || p.image,
+        arEnabled: form.arEnabled,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : p.model3dUrl,
+        ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
+      } : p));
+      toast.success('Produto atualizado com sucesso!');
+    } else {
+      const newProduct: Product = {
+        id: String(Date.now()),
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        category: form.category,
+        image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
+        arEnabled: form.arEnabled,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
+        ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
+        views: 0,
+      };
+      setProductList(prev => [newProduct, ...prev]);
+      toast.success('Produto adicionado com sucesso!');
+    }
 
-    setProductList(prev => [newProduct, ...prev]);
     setShowForm(false);
+    setEditingId(null);
     setForm(emptyProduct);
     setGlbFile(null);
     setImageFile(null);
     setImagePreview('');
-    toast.success('Produto adicionado com sucesso!');
   };
 
   const handleDelete = (id: string) => {
