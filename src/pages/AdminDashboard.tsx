@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { saveFile } from '@/lib/indexedDb';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package, Upload, X, Image, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
