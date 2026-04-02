@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { saveFile } from '@/lib/indexedDb';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package, Upload, X, Image, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -82,7 +83,7 @@ const AdminDashboard = () => {
     setShowForm(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name.trim()) {
       toast.error('Nome do produto é obrigatório');
       return;
@@ -90,6 +91,25 @@ const AdminDashboard = () => {
     if (!form.price || isNaN(Number(form.price))) {
       toast.error('Preço inválido');
       return;
+    }
+
+    let model3dUrl: string | undefined;
+
+    if (glbFile) {
+      const fileKey = `glb-${Date.now()}-${glbFile.name}`;
+      await saveFile(fileKey, glbFile);
+      // Store a blob URL for immediate viewing + indexeddb ref for persistence
+      model3dUrl = URL.createObjectURL(glbFile);
+      // We'll also tag the product with the IDB key for later restore
+      // After save, we update with the indexeddb: prefix
+      setTimeout(() => {
+        if (editingId) {
+          updateProduct(editingId, { model3dUrl: `indexeddb:${fileKey}` });
+        } else {
+          // Update the just-added product
+          setProductList(prev => prev.map((p, idx) => idx === 0 ? { ...p, model3dUrl: `indexeddb:${fileKey}` } : p));
+        }
+      }, 100);
     }
 
     if (editingId) {
@@ -100,7 +120,7 @@ const AdminDashboard = () => {
         category: form.category,
         image: form.image || undefined,
         arEnabled: form.arEnabled,
-        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
+        model3dUrl: model3dUrl || undefined,
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
       });
       toast.success('Produto atualizado com sucesso!');
@@ -113,7 +133,7 @@ const AdminDashboard = () => {
         category: form.category,
         image: form.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80',
         arEnabled: form.arEnabled,
-        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
+        model3dUrl,
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
         views: 0,
       };
