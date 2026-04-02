@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, Eye, Share2, Camera, Box } from 'lucide-react';
-import { products } from '@/data/mockData';
 import { useState, lazy, Suspense } from 'react';
+import { useProducts } from '@/context/ProductContext';
 import ProductViewer3D from '@/components/ar/ProductViewer3D';
 
 const CameraARViewer = lazy(() => import('@/components/ar/CameraARViewer'));
