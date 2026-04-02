@@ -93,17 +93,16 @@ const AdminDashboard = () => {
     }
 
     if (editingId) {
-      setProductList(prev => prev.map(p => p.id === editingId ? {
-        ...p,
+      updateProduct(editingId, {
         name: form.name,
         description: form.description,
         price: parseFloat(form.price),
         category: form.category,
-        image: form.image || p.image,
+        image: form.image || undefined,
         arEnabled: form.arEnabled,
-        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : p.model3dUrl,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
-      } : p));
+      });
       toast.success('Produto atualizado com sucesso!');
     } else {
       const newProduct: Product = {
@@ -118,7 +117,7 @@ const AdminDashboard = () => {
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
         views: 0,
       };
-      setProductList(prev => [newProduct, ...prev]);
+      addProduct(newProduct);
       toast.success('Produto adicionado com sucesso!');
     }
 
