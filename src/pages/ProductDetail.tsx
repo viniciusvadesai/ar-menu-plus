@@ -10,6 +10,7 @@ const CameraARViewer = lazy(() => import('@/components/ar/CameraARViewer'));
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { products } = useProducts();
   const [showAR, setShowAR] = useState(false);
   const [showWebXR, setShowWebXR] = useState(false);
 

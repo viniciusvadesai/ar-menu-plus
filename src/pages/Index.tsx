@@ -7,6 +7,7 @@ import ProductCard from '@/components/menu/ProductCard';
 import { useProducts } from '@/context/ProductContext';
 
 const Index = () => {
+  const { products } = useProducts();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
 
