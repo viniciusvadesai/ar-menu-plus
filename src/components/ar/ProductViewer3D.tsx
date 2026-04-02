@@ -55,9 +55,9 @@ const ProductViewer3D = ({ product }: ProductViewer3DProps) => {
     <div className="w-full aspect-square rounded-2xl overflow-hidden bg-card border border-border">
       <Canvas camera={{ position: [0, 3, 4], fov: 45 }} shadows dpr={[1, 2]}>
         <Suspense fallback={<LoadingFallback />}>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-          <directionalLight position={[-5, 3, -5]} intensity={0.3} />
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[5, 5, 5]} intensity={0.8} castShadow />
+          <directionalLight position={[-5, 3, -5]} intensity={0.2} />
           <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.3}>
             {product.model3dUrl ? (
               <GLBModel url={product.model3dUrl} />
@@ -66,7 +66,7 @@ const ProductViewer3D = ({ product }: ProductViewer3DProps) => {
             )}
           </Float>
           <ContactShadows position={[0, -0.1, 0]} opacity={0.4} scale={8} blur={2} far={4} />
-          <Environment preset="studio" />
+          <Environment preset="warehouse" environmentIntensity={0.4} />
           <OrbitControls
             enableZoom={false}
             enablePan={false}
