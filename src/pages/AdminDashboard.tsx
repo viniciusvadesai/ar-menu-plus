@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package, Upload, X, Image, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { products as initialProducts, categories, Product } from '@/data/mockData';
+import { categories, Product } from '@/data/mockData';
+import { useProducts } from '@/context/ProductContext';
 import { toast } from 'sonner';
 
 interface NewProduct {
