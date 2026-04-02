@@ -28,7 +28,7 @@ const emptyProduct: NewProduct = {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [productList, setProductList] = useState<Product[]>(initialProducts);
+  const { products: productList, setProducts: setProductList, addProduct, updateProduct, deleteProduct } = useProducts();
   const [activeTab, setActiveTab] = useState<'products' | 'analytics'>('products');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
