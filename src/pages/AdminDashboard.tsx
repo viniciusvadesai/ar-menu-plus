@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Pencil, Trash2, Sparkles, Eye, BarChart3, Package, Upload, X, Image, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { products as initialProducts, categories, Product } from '@/data/mockData';
+import { categories, Product } from '@/data/mockData';
+import { useProducts } from '@/context/ProductContext';
 import { toast } from 'sonner';
 
 interface NewProduct {
@@ -27,7 +28,7 @@ const emptyProduct: NewProduct = {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [productList, setProductList] = useState<Product[]>(initialProducts);
+  const { products: productList, setProducts: setProductList, addProduct, updateProduct, deleteProduct } = useProducts();
   const [activeTab, setActiveTab] = useState<'products' | 'analytics'>('products');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -92,17 +93,16 @@ const AdminDashboard = () => {
     }
 
     if (editingId) {
-      setProductList(prev => prev.map(p => p.id === editingId ? {
-        ...p,
+      updateProduct(editingId, {
         name: form.name,
         description: form.description,
         price: parseFloat(form.price),
         category: form.category,
-        image: form.image || p.image,
+        image: form.image || undefined,
         arEnabled: form.arEnabled,
-        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : p.model3dUrl,
+        model3dUrl: glbFile ? URL.createObjectURL(glbFile) : undefined,
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
-      } : p));
+      });
       toast.success('Produto atualizado com sucesso!');
     } else {
       const newProduct: Product = {
@@ -117,7 +117,7 @@ const AdminDashboard = () => {
         ingredients: form.ingredients.split(',').map(i => i.trim()).filter(Boolean),
         views: 0,
       };
-      setProductList(prev => [newProduct, ...prev]);
+      addProduct(newProduct);
       toast.success('Produto adicionado com sucesso!');
     }
 
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = (id: string) => {
-    setProductList(prev => prev.filter(p => p.id !== id));
+    deleteProduct(id);
     toast.success('Produto removido');
   };
 

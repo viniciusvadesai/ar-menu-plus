@@ -4,9 +4,10 @@ import MenuHeader from '@/components/menu/MenuHeader';
 import SearchBar from '@/components/menu/SearchBar';
 import CategoryFilter from '@/components/menu/CategoryFilter';
 import ProductCard from '@/components/menu/ProductCard';
-import { products } from '@/data/mockData';
+import { useProducts } from '@/context/ProductContext';
 
 const Index = () => {
+  const { products } = useProducts();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
 
