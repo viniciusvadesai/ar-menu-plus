@@ -130,7 +130,7 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = (id: string) => {
-    setProductList(prev => prev.filter(p => p.id !== id));
+    deleteProduct(id);
     toast.success('Produto removido');
   };
 
